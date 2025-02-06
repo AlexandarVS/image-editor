@@ -45,22 +45,6 @@ class ImageProcessor:
         self.image = self.original_image.copy()
         print("✅ Image reset to original state.")
 
-    def resize_image(self, new_width, new_height):
-        """Resizes the image to the specified dimensions."""
-        if self.image is None:
-            raise ValueError("No image loaded to resize!")
-
-        self.image = self.image.resize((new_width, new_height))
-        return self.image
-
-    def crop_image(self, left, top, right, bottom):
-        """Crops the image to the specified box dimensions."""
-        if self.image is None:
-            raise ValueError("No image loaded to crop!")
-
-        self.image = self.image.crop((left, top, right, bottom))
-        return self.image
-
     def rotate_image(self, degrees):
         """Rotates the image by the given number of degrees."""
         if self.image is None:
