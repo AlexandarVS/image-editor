@@ -1,11 +1,29 @@
+"""
+Image Editor GUI using PyQt5.
+Allows users to perform various image transformations such as rotating, mirroring,
+brightness/contrast adjustments, and more.
+"""
+
 import sys
-from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QPushButton, QFileDialog, 
-                             QVBoxLayout, QWidget, QSlider, QHBoxLayout, QComboBox, 
-                             QMessageBox, QSizePolicy, QScrollArea)
-from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtCore import Qt, QRect
-from image_processor import ImageProcessor
-from image_cropper import CropImageLabel
+
+try:
+    from PyQt5.QtWidgets import (
+        QLabel, QMainWindow, QPushButton, QFileDialog,
+        QVBoxLayout, QWidget, QSlider, QHBoxLayout, QComboBox,
+        QScrollArea
+    )
+    from PyQt5.QtGui import QPixmap, QImage
+    from PyQt5.QtCore import Qt
+except ImportError:
+    print("Error: PyQt5 is not installed. Install it using: pip install PyQt5")
+    sys.exit(1)
+
+try:
+    from image_processor import ImageProcessor
+    from image_cropper import CropImageLabel
+except ImportError:
+    print("Error: Required modules (image_processor, image_cropper) not found.")
+    sys.exit(1)
 
 class ImageEditor(QMainWindow):
     def __init__(self):
@@ -49,7 +67,7 @@ class ImageEditor(QMainWindow):
         self.scroll_area.setContentsMargins(0, 0, 0, 0)
 
     def setup_buttons(self):
-        """Set up Load, Save, Black & White, and Reset buttons.""" 
+        """Add Load, Save, Undo, Redo, and Reset buttons."""
         button_layout = QVBoxLayout()
 
         self.load_button = QPushButton("📂 Load Image")
@@ -60,17 +78,19 @@ class ImageEditor(QMainWindow):
         self.save_button.clicked.connect(self.save_image)
         button_layout.addWidget(self.save_button)
 
-        self.bw_button = QPushButton("⚫ Convert to Black & White")
-        self.bw_button.setCheckable(True)
-        self.bw_button.toggled.connect(self.toggle_bw)
-        button_layout.addWidget(self.bw_button)
+        self.undo_button = QPushButton("↩️ Undo")
+        self.undo_button.clicked.connect(self.undo)
+        button_layout.addWidget(self.undo_button)
+
+        self.redo_button = QPushButton("↪️ Redo")
+        self.redo_button.clicked.connect(self.redo)
+        button_layout.addWidget(self.redo_button)
 
         self.reset_button = QPushButton("🔄 Reset Image")
         self.reset_button.clicked.connect(self.reset_image)
         button_layout.addWidget(self.reset_button)
 
         self.controls_layout.addLayout(button_layout)
-
 
     def setup_rotation_section(self):
         """Set up Rotation button."""
@@ -99,7 +119,7 @@ class ImageEditor(QMainWindow):
         self.saturation_slider = self.create_slider("🎨 Saturation", self.adjust_saturation)
 
     def create_slider(self, name, function):
-        """Helper function to create a slider."""
+        """Helper function to create a slider that saves state only when released."""
         slider_layout = QVBoxLayout()
         slider_label = QLabel(name)
         slider_layout.addWidget(slider_label)
@@ -107,22 +127,31 @@ class ImageEditor(QMainWindow):
         slider = QSlider(Qt.Horizontal)
         slider.setRange(-100, 100)
         slider.setValue(0)
-        slider.valueChanged.connect(function)
-        slider_layout.addWidget(slider)
 
+        slider.sliderPressed.connect(self.save_adjustment_state)
+
+        slider.valueChanged.connect(function)
+
+        slider_layout.addWidget(slider)
         self.controls_layout.addLayout(slider_layout)
         return slider
 
     def load_image(self):
         """Load an image and remove extra space in the window."""
-        file_path, _ = QFileDialog.getOpenFileName(self, "Open Image", "", "Images (*.png *.jpg *.bmp)")
+        file_path, _ = QFileDialog.getOpenFileName(self,
+                                                "Open Image",
+                                                "", 
+                                                "Images (*.png *.jpg *.bmp)")
         if file_path:
             self.processor.load_image(file_path)
             self.display_image()
 
     def save_image(self):
         """Save the edited image."""
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save Image", "", "Images (*.png *.jpg *.bmp)")
+        file_path, _ = QFileDialog.getSaveFileName(self, 
+                                                   "Save Image", 
+                                                   "", 
+                                                   "Images (*.png *.jpg *.bmp)")
         if file_path:
             self.processor.save_image(file_path)
 
@@ -166,12 +195,6 @@ class ImageEditor(QMainWindow):
         """Adjust saturation and apply all transformations."""
         self.apply_adjustments()
 
-    def toggle_bw(self):
-        """Toggle between black and white and color modes."""
-        if self.bw_button.isChecked():
-            self.processor.convert_to_black_and_white()
-        self.display_image()
-
     def reset_image(self):
         """Reset the image to its original state."""
         self.processor.reset_image()
@@ -186,7 +209,10 @@ class ImageEditor(QMainWindow):
             qimage = self.pil_to_qimage(self.processor.image)
             pixmap = QPixmap.fromImage(qimage)
 
-            pixmap = pixmap.scaled(self.scroll_area.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pixmap = pixmap.scaled(
+                self.scroll_area.size(),
+                Qt.KeepAspectRatio, 
+                Qt.SmoothTransformation)
 
             self.image_label.set_image(self.processor.image)
             self.image_label.setPixmap(pixmap)
@@ -194,14 +220,25 @@ class ImageEditor(QMainWindow):
             self.scroll_area.setFixedSize(900, 700)
             self.scroll_area.setWidgetResizable(True)
 
+    def undo(self):
+        """Perform an undo operation."""
+        new_image = self.processor.undo()
+        if new_image:
+            self.display_image()
+
+    def redo(self):
+        """Perform a redo operation."""
+        new_image = self.processor.redo()
+        if new_image:
+            self.display_image()
+
+    def save_adjustment_state(self):
+        """Save the state only once when the slider is first clicked."""
+        if self.processor and self.processor.image:
+            self.processor.save_state()
+
     def pil_to_qimage(self, pil_image):
         """Convert a PIL image to QImage."""
         img = pil_image.convert("RGBA")
         data = img.tobytes("raw", "RGBA")
         return QImage(data, img.width, img.height, QImage.Format_RGBA8888)
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = ImageEditor()
-    window.show()
-    sys.exit(app.exec_())

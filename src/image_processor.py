@@ -6,6 +6,7 @@ import os
 from PIL import Image
 from PIL import ImageEnhance
 
+
 class ImageProcessor:
     """Class to handle image processing tasks such as loading and saving images."""
 
@@ -15,6 +16,8 @@ class ImageProcessor:
         self.file_path = None
         self.original_image = None
         self.transformed_image = None
+        self.undo_stack = []
+        self.redo_stack = []
 
     def load_image(self, file_path):
         """
@@ -25,8 +28,35 @@ class ImageProcessor:
 
         self.image = Image.open(file_path)
         self.original_image = self.image.copy()
+        self.transformed_image = self.image.copy()
+        self.undo_stack.clear()
+        self.redo_stack.clear()
         self.file_path = file_path
         return self.image
+
+    def save_state(self):
+        """Save the current state to the undo stack before making a change."""
+        if self.image:
+            self.undo_stack.append(self.image.copy())
+            self.redo_stack.clear()
+
+    def undo(self):
+        """Revert to the previous state if available."""
+        if self.undo_stack:
+            self.redo_stack.append(self.image.copy())
+            self.image = self.undo_stack.pop()
+            self.transformed_image = self.image.copy()
+            return self.image
+        return None
+
+    def redo(self):
+        """Reapply the last undone change if available."""
+        if self.redo_stack:
+            self.undo_stack.append(self.image.copy())
+            self.image = self.redo_stack.pop()
+            self.transformed_image = self.image.copy()
+            return self.image
+        return None
 
     def save_image(self, save_path, file_format=None):
         """
@@ -42,7 +72,7 @@ class ImageProcessor:
         """Resets image to its original state."""
         if self.original_image is None:
             raise ValueError("No original image to reset!")
-        
+
         self.image = self.original_image.copy()
         self.transformed_image = self.original_image.copy()
         print("✅ Image reset to original state.")
@@ -52,6 +82,7 @@ class ImageProcessor:
         if self.image is None:
             raise ValueError("No image loaded to rotate!")
 
+        self.save_state()
         self.image = self.image.rotate(degrees, expand=True)
         self.transformed_image = self.image
         return self.image
@@ -61,10 +92,11 @@ class ImageProcessor:
         if self.image is None:
             raise ValueError("No image loaded to mirror!")
 
+        self.save_state()
         if direction.lower() == "horizontal":
-            self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT) # pylint: disable=no-member
+            self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)  # pylint: disable=no-member
         elif direction.lower() == "vertical":
-            self.image = self.image.transpose(Image.FLIP_TOP_BOTTOM) # pylint: disable=no-member
+            self.image = self.image.transpose(Image.FLIP_TOP_BOTTOM)  # pylint: disable=no-member
         else:
             raise ValueError("Invalid direction! Use 'horizontal' or 'vertical'.")
 
@@ -75,7 +107,6 @@ class ImageProcessor:
         """Adjusts image brightness. Factor > 1 increases brightness, factor < 1 decreases."""
         if self.image is None:
             raise ValueError("No image loaded to adjust brightness!")
-
         enhancer = ImageEnhance.Brightness(self.image)
         self.image = enhancer.enhance(1 + factor)
         return self.image
@@ -84,7 +115,6 @@ class ImageProcessor:
         """Adjusts image contrast. Factor > 1 increases contrast, factor < 1 decreases."""
         if self.image is None:
             raise ValueError("No image loaded to adjust contrast!")
-
         enhancer = ImageEnhance.Contrast(self.image)
         self.image = enhancer.enhance(1 + factor)
         return self.image
@@ -93,16 +123,6 @@ class ImageProcessor:
         """Adjusts image saturation. Factor > 1 increases saturation, factor < 1 decreases."""
         if self.image is None:
             raise ValueError("No image loaded to adjust saturation!")
-
         enhancer = ImageEnhance.Color(self.image)
         self.image = enhancer.enhance(1 + factor)
-        return self.image
-
-
-    def convert_to_black_and_white(self):
-        """Converts image to grayscale (Black & White)."""
-        if self.image is None:
-            raise ValueError("No image loaded to convert!")
-
-        self.image = self.image.convert("L")
         return self.image

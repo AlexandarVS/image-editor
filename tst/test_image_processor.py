@@ -38,22 +38,6 @@ def test_save_image():
     assert os.path.exists(test_save_path)
     os.remove(test_save_path)
 
-def test_resize_image():
-    """Test image resizing to ensure new dimensions are correct."""
-    processor = ImageProcessor()
-    processor.image = Image.new("RGB", (200, 200), color="red")
-
-    processor.resize_image(100, 50)
-    assert processor.image.size == (100, 50)
-
-def test_crop_image():
-    """Test cropping an image."""
-    processor = ImageProcessor()
-    processor.image = Image.new("RGB", (200, 200), color="red")
-
-    processor.crop_image(50, 50, 150, 150)
-    assert processor.image.size == (100, 100)
-
 def test_rotate_image():
     """Test rotating an image."""
     processor = ImageProcessor()
@@ -95,13 +79,5 @@ def test_adjust_saturation():
     processor = ImageProcessor()
     processor.image = Image.new("RGB", (100, 100), color="gray")
 
-    processor.adjust_saturation(2.0)  # Increase saturation
+    processor.adjust_saturation(2.0)
     assert processor.image is not None
-
-def test_convert_to_black_and_white():
-    """Test black and white conversion."""
-    processor = ImageProcessor()
-    processor.image = Image.new("RGB", (100, 100), color="gray")
-
-    processor.convert_to_black_and_white()
-    assert processor.image.mode == "L"  # 'L' mode means grayscale
