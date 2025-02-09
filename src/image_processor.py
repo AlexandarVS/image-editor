@@ -14,6 +14,7 @@ class ImageProcessor:
         self.image = None
         self.file_path = None
         self.original_image = None
+        self.transformed_image = None
 
     def load_image(self, file_path):
         """
@@ -43,6 +44,7 @@ class ImageProcessor:
             raise ValueError("No original image to reset!")
         
         self.image = self.original_image.copy()
+        self.transformed_image = self.original_image.copy()
         print("✅ Image reset to original state.")
 
     def rotate_image(self, degrees):
@@ -51,6 +53,7 @@ class ImageProcessor:
             raise ValueError("No image loaded to rotate!")
 
         self.image = self.image.rotate(degrees, expand=True)
+        self.transformed_image = self.image
         return self.image
 
     def mirror_image(self, direction="horizontal"):
@@ -65,6 +68,7 @@ class ImageProcessor:
         else:
             raise ValueError("Invalid direction! Use 'horizontal' or 'vertical'.")
 
+        self.transformed_image = self.image
         return self.image
 
     def adjust_brightness(self, factor):
@@ -72,9 +76,8 @@ class ImageProcessor:
         if self.image is None:
             raise ValueError("No image loaded to adjust brightness!")
 
-        self.image = self.original_image.copy()
         enhancer = ImageEnhance.Brightness(self.image)
-        self.image = enhancer.enhance(factor)
+        self.image = enhancer.enhance(1 + factor)
         return self.image
 
     def adjust_contrast(self, factor):
@@ -82,9 +85,8 @@ class ImageProcessor:
         if self.image is None:
             raise ValueError("No image loaded to adjust contrast!")
 
-        self.image = self.original_image.copy()
         enhancer = ImageEnhance.Contrast(self.image)
-        self.image = enhancer.enhance(factor)
+        self.image = enhancer.enhance(1 + factor)
         return self.image
 
     def adjust_saturation(self, factor):
@@ -92,16 +94,15 @@ class ImageProcessor:
         if self.image is None:
             raise ValueError("No image loaded to adjust saturation!")
 
-        self.image = self.original_image.copy()
         enhancer = ImageEnhance.Color(self.image)
-        self.image = enhancer.enhance(factor)
+        self.image = enhancer.enhance(1 + factor)
         return self.image
+
 
     def convert_to_black_and_white(self):
         """Converts image to grayscale (Black & White)."""
         if self.image is None:
             raise ValueError("No image loaded to convert!")
 
-        self.image = self.original_image.copy()
         self.image = self.image.convert("L")
         return self.image

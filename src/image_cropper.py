@@ -72,7 +72,8 @@ class CropImageLabel(QLabel):
             self.cv_image = self.cv_image[top:bottom, left:right]
             self.image = Image.fromarray(cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2RGB))
             self.update_display()
-            self.parent_window.processor.image = self.image
+            self.parent_window.processor.transformed_image = self.image.copy()
+            self.parent_window.processor.image = self.image.copy()
 
     def paintEvent(self, event):
         """Draw the selection rectangle while cropping."""
