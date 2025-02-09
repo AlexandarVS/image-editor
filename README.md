@@ -27,7 +27,8 @@ python main.py
 
 ## File Structure
 ```
-project_root/
+project/
+|── images/ # Test images
 │── src/
 │   ├── image_editor_gui.py   # Main GUI implementation
 │   ├── image_processor.py    # Image processing logic
@@ -36,7 +37,7 @@ project_root/
 │   ├── test_image_processor.py  # Unit tests
 │── main.py  # Entry point
 │── requirements.txt  # Dependencies
-│── README.md  # This file
+│── README.md
 ```
 
 ## Testing
