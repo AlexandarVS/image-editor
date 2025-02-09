@@ -53,8 +53,8 @@ pytest tests/
 - PyTest (for testing)
 
 ## License
-This project is licensed under the MIT License.
+No License
 
 ## Author
-[Your Name]
+Aleksandar Slavov
 
